@@ -1,4 +1,7 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
+
+from kml_parser import parse_contours
+
 
 app = FastAPI(title="Pond Catchment Analysis Backend")
 
@@ -10,7 +13,15 @@ def root():
 
 @app.post("/analyzeContour")
 async def analyze_contour(file: UploadFile = File(...)):
-    return {
-        "message": "Contour file received successfully",
-        "filename": file.filename
-    }
+    try:
+        file_bytes = await file.read()
+
+        result = parse_contours(
+            file_bytes=file_bytes,
+            filename=file.filename or ""
+        )
+
+        return result
+
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
