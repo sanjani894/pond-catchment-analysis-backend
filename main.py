@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 
 app = FastAPI(title="Pond Catchment Analysis Backend")
 
@@ -9,7 +9,8 @@ def root():
 
 
 @app.post("/analyzeContour")
-def analyze_contour():
+async def analyze_contour(file: UploadFile = File(...)):
     return {
-        "message": "Contour analysis endpoint is ready"
+        "message": "Contour file received successfully",
+        "filename": file.filename
     }
