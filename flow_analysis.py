@@ -178,3 +178,82 @@ def calculate_flow_accumulation(flow_direction):
         accumulate(index)
 
     return accumulation
+
+
+def delineate_catchment(
+    flow_direction,
+    outlet_row,
+    outlet_column,
+    cell_width_m,
+    cell_height_m
+):
+    """
+    Identify all cells that eventually drain into
+    the selected outlet cell.
+
+    Returns:
+        Dictionary containing the catchment mask
+        and estimated catchment area.
+    """
+
+    rows, columns = flow_direction.shape
+
+    catchment = np.zeros(
+        (rows, columns),
+        dtype=bool
+    )
+
+    catchment[outlet_row, outlet_column] = True
+
+    changed = True
+
+    while changed:
+        changed = False
+
+        for row in range(rows):
+            for column in range(columns):
+
+                if catchment[row, column]:
+                    continue
+
+                direction = flow_direction[row, column]
+
+                if direction < 0:
+                    continue
+
+                dr, dc = DIRECTIONS[direction]
+
+                next_row = row + dr
+                next_column = column + dc
+
+                if (
+                    next_row < 0
+                    or next_row >= rows
+                    or next_column < 0
+                    or next_column >= columns
+                ):
+                    continue
+
+                if catchment[next_row, next_column]:
+                    catchment[row, column] = True
+                    changed = True
+
+    cell_count = int(np.sum(catchment))
+
+    cell_area_m2 = (
+        cell_width_m * cell_height_m
+    )
+
+    area_m2 = (
+        cell_count * cell_area_m2
+    )
+
+    area_hectares = area_m2 / 10000.0
+
+    return {
+        "mask": catchment,
+        "cell_count": cell_count,
+        "cell_area_m2": float(cell_area_m2),
+        "area_m2": float(area_m2),
+        "area_hectares": float(area_hectares)
+    }
