@@ -124,14 +124,17 @@ def build_dem(contours, bounds, grid_size=100):
     )
 
     return {
-        "elevation_grid": elevation_grid,
-        "grid_size": grid_size,
-        "cell_width_m": cell_width,
-        "cell_height_m": cell_height,
-        "min_elevation": float(
-            np.min(elevation_grid)
-        ),
-        "max_elevation": float(
-            np.max(elevation_grid)
-        )
-    }
+    "elevation_grid": elevation_grid,
+    "grid_size": grid_size,
+    "cell_width_m": cell_width,
+    "cell_height_m": cell_height,
+    "min_elevation": float(
+        np.min(elevation_grid)
+    ),
+    "max_elevation": float(
+        np.max(elevation_grid)
+    ),
+    "x_grid": x_grid,
+    "y_grid": y_grid,
+    "transformer": transformer
+}
