@@ -17,11 +17,17 @@ async def analyze_contour(file: UploadFile = File(...)):
         file_bytes = await file.read()
 
         result = parse_contours(
-            file_bytes=file_bytes,
-            filename=file.filename or ""
+           file_bytes=file_bytes,
+           filename=file.filename or ""
         )
 
-        return result
+        response = {
+            key: value
+            for key, value in result.items()
+            if key != "contours"
+        }
+
+        return response
 
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))

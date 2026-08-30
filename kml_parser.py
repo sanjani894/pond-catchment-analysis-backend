@@ -37,6 +37,7 @@ def parse_contours(file_bytes: bytes, filename: str) -> dict:
 
     elevations = []
     all_coordinates = []
+    contours = []
 
     for placemark in placemarks:
         name = placemark.find("kml:name", KML_NAMESPACE)
@@ -76,6 +77,10 @@ def parse_contours(file_bytes: bytes, filename: str) -> dict:
         if not contour_coordinates:
             continue
 
+        contours.append({
+            "elevation": elevation,
+            "coordinates": contour_coordinates
+        })
         elevations.append(elevation)
         all_coordinates.extend(contour_coordinates)
 
@@ -96,5 +101,6 @@ def parse_contours(file_bytes: bytes, filename: str) -> dict:
             "min_latitude": min(latitudes),
             "max_longitude": max(longitudes),
             "max_latitude": max(latitudes)
-        }
+        },
+        "contours": contours
     }
