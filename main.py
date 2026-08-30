@@ -1,6 +1,6 @@
 from terrain_builder import build_dem
 from fastapi import FastAPI, UploadFile, File, HTTPException
-
+from flow_analysis import calculate_flow_direction
 from kml_parser import parse_contours
 
 
@@ -25,6 +25,11 @@ async def analyze_contour(file: UploadFile = File(...)):
         contours=result["contours"],
         bounds=result["bounds"]
         )
+        flow_direction = calculate_flow_direction(
+            elevation_grid=terrain["elevation_grid"],
+            cell_width_m=terrain["cell_width_m"],
+            cell_height_m=terrain["cell_height_m"]
+        )
 
         response = {
             key: value
@@ -38,7 +43,10 @@ async def analyze_contour(file: UploadFile = File(...)):
            "min_elevation": terrain["min_elevation"],
            "max_elevation": terrain["max_elevation"]
         }
-
+        response["flow_direction"] = {
+            "grid_rows": int(flow_direction.shape[0]),
+            "grid_columns": int(flow_direction.shape[1])
+        }
         return response
 
     except ValueError as error:
