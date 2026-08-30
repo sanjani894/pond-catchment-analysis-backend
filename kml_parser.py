@@ -26,9 +26,8 @@ def _get_kml_content(file_bytes: bytes, filename: str) -> bytes:
 
     raise ValueError("Only KML and KMZ files are supported")
 
-
 def parse_contours(file_bytes: bytes, filename: str) -> dict:
-    """Parse contour features and return basic terrain information."""
+    """Parse contour features and return terrain and geometry information."""
 
     kml_content = _get_kml_content(file_bytes, filename)
 
@@ -37,7 +36,7 @@ def parse_contours(file_bytes: bytes, filename: str) -> dict:
     placemarks = root.findall(".//kml:Placemark", KML_NAMESPACE)
 
     elevations = []
-    contour_count = 0
+    all_coordinates = []
 
     for placemark in placemarks:
         name = placemark.find("kml:name", KML_NAMESPACE)
@@ -50,15 +49,52 @@ def parse_contours(file_bytes: bytes, filename: str) -> dict:
         except ValueError:
             continue
 
+        coordinate_elements = placemark.findall(
+            ".//kml:coordinates",
+            KML_NAMESPACE
+        )
+
+        contour_coordinates = []
+
+        for element in coordinate_elements:
+            if element.text is None:
+                continue
+
+            for coordinate in element.text.strip().split():
+                parts = coordinate.split(",")
+
+                if len(parts) < 2:
+                    continue
+
+                longitude = float(parts[0])
+                latitude = float(parts[1])
+
+                contour_coordinates.append(
+                    (longitude, latitude)
+                )
+
+        if not contour_coordinates:
+            continue
+
         elevations.append(elevation)
-        contour_count += 1
+        all_coordinates.extend(contour_coordinates)
 
     if not elevations:
         raise ValueError("No contour elevations found in the input file")
 
+    longitudes = [point[0] for point in all_coordinates]
+    latitudes = [point[1] for point in all_coordinates]
+
     return {
         "filename": filename,
-        "contour_count": contour_count,
+        "contour_count": len(elevations),
         "min_elevation": min(elevations),
-        "max_elevation": max(elevations)
+        "max_elevation": max(elevations),
+        "coordinate_count": len(all_coordinates),
+        "bounds": {
+            "min_longitude": min(longitudes),
+            "min_latitude": min(latitudes),
+            "max_longitude": max(longitudes),
+            "max_latitude": max(latitudes)
+        }
     }
