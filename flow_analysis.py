@@ -96,3 +96,85 @@ def calculate_flow_direction(elevation_grid, cell_width_m, cell_height_m):
             flow_direction[row, column] = best_direction
 
     return flow_direction
+
+
+
+def calculate_flow_accumulation(flow_direction):
+    """
+    Calculate the number of upstream cells contributing
+    to each cell.
+
+    Parameters:
+        flow_direction: D8 flow-direction grid.
+
+    Returns:
+        A grid containing flow accumulation values.
+    """
+
+    rows, columns = flow_direction.shape
+
+    accumulation = np.ones(
+        (rows, columns),
+        dtype=float
+    )
+
+    # Count how many cells flow into each cell.
+    incoming = [
+        [] for _ in range(rows * columns)
+    ]
+
+    for row in range(rows):
+        for column in range(columns):
+
+            direction = flow_direction[row, column]
+
+            if direction < 0:
+                continue
+
+            dr, dc = DIRECTIONS[direction]
+
+            next_row = row + dr
+            next_column = column + dc
+
+            if (
+                next_row < 0
+                or next_row >= rows
+                or next_column < 0
+                or next_column >= columns
+            ):
+                continue
+
+            current_index = row * columns + column
+            next_index = next_row * columns + next_column
+
+            incoming[next_index].append(
+                current_index
+            )
+
+    # Process cells from upstream toward downstream.
+    processed = set()
+
+    def accumulate(index):
+        if index in processed:
+            return accumulation[
+                index // columns,
+                index % columns
+            ]
+
+        row = index // columns
+        column = index % columns
+
+        total = 1.0
+
+        for upstream_index in incoming[index]:
+            total += accumulate(upstream_index)
+
+        accumulation[row, column] = total
+        processed.add(index)
+
+        return total
+
+    for index in range(rows * columns):
+        accumulate(index)
+
+    return accumulation
